@@ -386,6 +386,7 @@ ControllerDeviceInitParams DeviceController::GetControllerDeviceInitParams()
     };
 }
 
+/* Device Commissioner Constructor Definition */
 DeviceCommissioner::DeviceCommissioner() :
     mOnDeviceConnectedCallback(OnDeviceConnectedFn, this), mOnDeviceConnectionFailureCallback(OnDeviceConnectionFailureFn, this),
 #if CHIP_DEVICE_CONFIG_ENABLE_AUTOMATIC_CASE_RETRIES

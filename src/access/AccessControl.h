@@ -105,8 +105,10 @@ public:
 
         Entry() = default;
 
+        /* Move constructor*/
         Entry(Entry && other) : mDelegate(other.mDelegate) { other.mDelegate = &mDefaultDelegate.get(); }
 
+        /* Overloading assigning operation */
         Entry & operator=(Entry && other)
         {
             if (this != &other)
@@ -118,6 +120,7 @@ public:
             return *this;
         }
 
+        /* Not allowing copy */
         Entry(const Entry &)             = delete;
         Entry & operator=(const Entry &) = delete;
 
@@ -230,7 +233,7 @@ public:
     private:
         static Global<Delegate> mDefaultDelegate;
         Delegate * mDelegate = &mDefaultDelegate.get();
-    };
+    }; /* Entry class */
 
     /**
      * Handle to an entry iterator in the access control list.
@@ -396,7 +399,7 @@ public:
         {
             return CHIP_ERROR_ACCESS_DENIED;
         }
-    };
+    }; /* AccesControl Delegate class */
 
     AccessControl() = default;
 

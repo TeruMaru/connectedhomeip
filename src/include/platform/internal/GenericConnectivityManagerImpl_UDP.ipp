@@ -33,6 +33,7 @@ namespace Internal {
 template <class ImplClass>
 chip::Inet::EndPointManager<Inet::UDPEndPoint> & GenericConnectivityManagerImpl_UDP<ImplClass>::_UDPEndPointManager()
 {
+    /* static chip::Inet::EndPointManagerImplPool<UDPEndPointImplSockets> sUDPEndPointManagerImpl;  */
     static chip::Inet::UDPEndPointManagerImpl sUDPEndPointManagerImpl;
     return sUDPEndPointManagerImpl;
 }

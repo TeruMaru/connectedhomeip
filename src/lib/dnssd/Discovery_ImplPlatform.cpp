@@ -496,7 +496,11 @@ CHIP_ERROR DiscoveryImplPlatform::PublishService(const char * serviceType, TextE
                                                  DnssdServiceProtocol protocol, PeerId peerId)
 {
     DnssdService service;
+    /* Make Hostname from MAC address */
     ReturnErrorOnFailure(MakeHostName(service.mHostName, sizeof(service.mHostName), mac));
+    /*
+     * For TCP protocol, make service.mName from peerID. If success, service.mName = "FabricIdHI##FabricIdLO##-NodeIdHI##NodeIdLo".
+     */
     ReturnErrorOnFailure(protocol == DnssdServiceProtocol::kDnssdProtocolTcp
                              ? MakeInstanceName(service.mName, sizeof(service.mName), peerId)
                              : GetCommissionableInstanceName(service.mName, sizeof(service.mName)));
@@ -514,6 +518,7 @@ CHIP_ERROR DiscoveryImplPlatform::PublishService(const char * serviceType, TextE
     service.mSubTypes      = subTypes;
     service.mSubTypeSize   = subTypeSize;
 
+    /* ChipDnssdPublishService is implemented in src/platform/OpenThread/DnssdImpl.cpp*/
     ReturnErrorOnFailure(ChipDnssdPublishService(&service, HandleDnssdPublish, this));
 
 #ifdef DETAIL_LOGGING
@@ -556,16 +561,70 @@ CHIP_ERROR DiscoveryImplPlatform::PublishService(const char * serviceType, TextE
 
 CHIP_ERROR DiscoveryImplPlatform::Advertise(const OperationalAdvertisingParameters & params)
 {
+    /*
+     * VerifyOrReturnError(IsInitialized(), CHIP_ERROR_INCORRECT_STATE);
+     * TextEntry textEntries[OperationalAdvertisingParameters::kTxtMaxNumber];
+     * size_t textEntrySize = 0;
+     * const char * subTypes[Operational::kSubTypeMaxNumber];                  
+     * size_t subTypeSize = 0;
+     */
     PREPARE_RECORDS(Operational);
 
+    /* 
+     * char SessionIdleIntervalBuf[kKeySessionIdleIntervalMaxLength + 1];    # kKeySessionIdleIntervalMaxLength = 7
+     * ReturnErrorOnFailure(AddTxtRecord(TxtFieldKey::kSessionIdleInterval, textEntries, textEntrySize, SessionIdleIntervalBuf, sizeof(SessionIdleIntervalBuf), params));
+     *     AddTxtRecord:
+     *              CHIP_ERROR error = CopyTxtRecord(TxtFieldKey::kSessionIdleInterval, SessionIdleIntervalBuf,  sizeof(SessionIdleIntervalBuf), params);
+     *              VerifyOrReturnError(CHIP_ERROR_UNINITIALIZED != error, CHIP_NO_ERROR);
+     *              VerifyOrReturnError(CHIP_NO_ERROR == error, error);
+     *              textEntries[textEntrySize++] = { Internal::txtFieldInfo[static_cast<int>(TxtFieldKey::kSessionIdleInterval)].keyStr,      #mKey
+     *                                               reinterpret_cast<const uint8_t *>(SessionIdleIntervalBuf),                               #mData = ("%" PRIu32, CLAMP(kMaxRetryInterval.count(), OperationalAdvertisingParameters.mLocalMRPConfig.Value().mIdleRetransTimeout.count()))
+     *                                               strnlen(SessionIdleIntervalBuf, sizeof(SessionIdleIntervalBuf))                          #mDataSize
+     *                                             };
+     *              return CHIP_NO_ERROR;
+     */
     ADD_TXT_RECORD(SessionIdleInterval);
+    /*
+     * textEntries[textEntrySize++] = { Internal::txtFieldInfo[static_cast<int>(TxtFieldKey::kSessionActiveInterval)].keyStr,      #mKey
+     *                                  reinterpret_cast<const uint8_t *>(SessionActiveIntervalBuf),                               #mData = ("%" PRIu32, CLAMP(kMaxRetryInterval.count(), OperationalAdvertisingParameters.mLocalMRPConfig.Value().mActiveRetransTimeout.count()))
+     *                                  strnlen(SessionActiveIntervalBuf, sizeof(SessionActiveIntervalBuf))                        #mDataSize
+     * }
+     */
     ADD_TXT_RECORD(SessionActiveInterval);
+    /*
+     * textEntries[textEntrySize++] = { Internal::txtFieldInfo[static_cast<int>(TxtFieldKey::kSessionActiveThreshold)].keyStr,      #mKey
+     *                                  reinterpret_cast<const uint8_t *>(SessionActiveThresholdBuf),                               #mData = ("%" PRIu32, kOperationalAdvertisingParameters.mLocalMRPConfig.Value().mActiveThresholdTime.count())
+     *                                  strnlen(SessionActiveThresholdBuf, sizeof(SessionActiveThresholdBuf))                       #mDataSize
+     * }
+     */    
     ADD_TXT_RECORD(SessionActiveThreshold);
+
+    /* Probably not supporting TCP unless changed in Kconfig */
     ADD_TXT_RECORD(TcpSupported);
     ADD_TXT_RECORD(LongIdleTimeICD); // Optional, will not be added if related 'params' doesn't have a value
 
+    /* 
+     * char CompressedFabricIdSubTypeBuf[kSubTypeCompressedFabricIdMaxLength + 1];                                                                          \
+     * ReturnErrorOnFailure(AddPtrRecord(DiscoveryFilterType::kCompressedFabricId, subTypes, subTypeSize, CompressedFabricIdSubTypeBuf,                       \
+     *                                   sizeof(CompressedFabricIdSubTypeBuf), params.GetCompressedFabricId()));
+     * AddPtrRecord eventually calls MakeServiceSubtype(CompressedFabricIdSubTypeBuf, sizeof(CompressedFabricIdSubTypeBuf), DiscoveryFilter(kCompressedFabricId, kOperationalAdvertisingParameters.mPeerId.GetCompressedFabricId()))
+     *      MakeServiceSubtype(...) then call the following block for kCompressedFabricId:
+     *          {
+     *              requiredSize = snprintf(CompressedFabricIdSubTypeBuf, sizeof(CompressedFabricIdSubTypeBuf), "_I");   # Write "_I" to CompressedFabricIdSubTypeBuf and return the number of written characters 
+     *              return Encoding::Uint64ToHex(kOperationalAdvertisingParameters.mPeerId.GetCompressedFabricId().code, &CompressedFabricIdSubTypeBuf[requiredSize], sizeof(CompressedFabricIdSubTypeBuf) - static_cast<size_t>(requiredSize),
+                                     Encoding::HexFlags::kUppercaseAndNullTerminate);   # Convert 64-bit CompressedFabricId.code to Big Endian hex with Uppercase characters and adding null terminate character ("\0")
+     *          }
+     * After MakeSericeSubtype(...), CompressedFabricIdSubTypeBuf will contain needed Fabric ID value, which is then added to subTypes array: 
+     *      subTypes[subTypeSize++] = CompressedFabricIdSubTypeBuf
+     * 
+     */
     ADD_PTR_RECORD(CompressedFabricId);
 
+
+    /*
+     * PublishService(kOperationalServiceName, textEntries, textEntrySize, subTypes, subTypeSize, params));
+     * kOperationalServiceName is defined in ServiceNaming.h, with value of "_matter"
+     */
     PUBLISH_RECORDS(Operational);
 
     return CHIP_NO_ERROR;

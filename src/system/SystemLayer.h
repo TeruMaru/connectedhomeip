@@ -223,7 +223,7 @@ private:
     // Copy and assignment NOT DEFINED
     Layer(const Layer &)             = delete;
     Layer & operator=(const Layer &) = delete;
-};
+}; // Class Layer
 
 #if CHIP_SYSTEM_CONFIG_USE_LWIP || CHIP_SYSTEM_CONFIG_USE_OPEN_THREAD_ENDPOINT
 

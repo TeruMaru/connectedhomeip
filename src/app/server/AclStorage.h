@@ -28,7 +28,7 @@ namespace app {
 
 /**
  * Storage specifically for access control entries, which correspond to the
- * ACL attribute of the access control cluster.
+ * ACL (Access Controll List) attribute of the access control cluster.
  *
  * An object of this class should be initialized directly after the access
  * control module is initialized, as it will populate entries in the system

@@ -1682,6 +1682,13 @@ Protocols::InteractionModel::Status InteractionModelEngine::CommandExists(const 
     return ServerClusterCommandExists(aCommandPath);
 }
 
+/*
+ * @brief
+ *    Register a CommandHandlerInterfacce to mCommandHandlerList member of InteractionModelEngine class
+ *    after making sure the to-be-registered command handler has not been registered. If so, the handler
+ *    will be PREPENDED to mCommandHandlerList (which is a liked list)
+ * @param[in] handler  A pointer to the CommandHandlerInterface object needs registering
+ */
 CHIP_ERROR InteractionModelEngine::RegisterCommandHandler(CommandHandlerInterface * handler)
 {
     VerifyOrReturnError(handler != nullptr, CHIP_ERROR_INVALID_ARGUMENT);

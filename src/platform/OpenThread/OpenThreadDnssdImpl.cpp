@@ -50,7 +50,8 @@ CHIP_ERROR OpenThreadDnssdPublishService(const DnssdService * service, DnssdPubl
     }
 
     char serviceType[chip::Dnssd::kDnssdTypeAndProtocolMaxSize + 1];
-    snprintf(serviceType, sizeof(serviceType), "%s.%s", service->mType, GetProtocolString(service->mProtocol));
+
+    snprintf(serviceType, sizeof(serviceType), "%s.%s", service->mType, GetProtocolString(service->mProtocol)); // For example, _matter._tcp
 
     Span<const char * const> subTypes(service->mSubTypes, service->mSubTypeSize);
     Span<const TextEntry> textEntries(service->mTextEntries, service->mTextEntrySize);

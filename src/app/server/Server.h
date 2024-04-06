@@ -598,6 +598,7 @@ private:
 
     ServerTransportMgr mTransports;
     SessionManager mSessions;
+    /* Certificate Authenticated Session Establishment server */
     CASEServer mCASEServer;
 
     CASESessionManager mCASESessionManager;

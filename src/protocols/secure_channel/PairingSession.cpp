@@ -28,6 +28,7 @@ namespace chip {
 CHIP_ERROR PairingSession::AllocateSecureSession(SessionManager & sessionManager, const ScopedNodeId & sessionEvictionHint)
 {
     auto handle = sessionManager.AllocateSession(GetSecureSessionType(), sessionEvictionHint);
+    /* HasValue() is a method of Optional<SessionHandle> class */
     VerifyOrReturnError(handle.HasValue(), CHIP_ERROR_NO_MEMORY);
     VerifyOrReturnError(mSecureSessionHolder.GrabPairingSession(handle.Value()), CHIP_ERROR_INTERNAL);
     mSessionManager = &sessionManager;

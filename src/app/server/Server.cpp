@@ -86,6 +86,7 @@ public:
 
 namespace chip {
 
+/* Define static sServer member of Sever class */
 Server Server::sServer;
 
 #if CHIP_CONFIG_ENABLE_SERVER_IM_EVENT
@@ -157,6 +158,7 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     SetSafeAttributePersistenceProvider(&mAttributePersister);
 
     {
+        /* Init Fabric table without leaking its init params to the outer scope*/
         FabricTable::InitParams fabricTableInitParams;
         fabricTableInitParams.storage             = mDeviceStorage;
         fabricTableInitParams.operationalKeystore = mOperationalKeystore;
@@ -186,6 +188,22 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     }
 
     // Init transport before operations with secure session mgr.
+    /*
+     * chip::Transport::UdpListenParameters udpInitParams;
+     * chip::Transport::UDP.Init(
+     *      udpInitParams.mEndPointManager = DeviceLayer::UDPEndPointManager(),
+     *      udpInitParams.mAddressType = IPAddressType::kIPv6,
+     *      udpInitParams.mNativeParams = initParams.endpointNativeParams;
+     * )
+     * DeviceLayer::UDPEndPointManager() calls chip::DeviceLayer::ConnectivityManager.UDPEndPointManager() 
+     * which returns a reference to chip::Inet::EndPointManager<Inet::UDPEndPoint> via the following definition
+     * in src/include/platform/internal/GenericConnectivityManagerImpl_UDP.ipp (for UDP endpoint for OpenThread as an e.g.):
+     * chip::Inet::EndPointManager<Inet::UDPEndPoint> & GenericConnectivityManagerImpl_UDP<ImplClass>::_UDPEndPointManager() {
+     *      chip::Inet::EndPointManagerImplPool<UDPEndPointImplOT> sUDPEndPointManagerImpl;
+     *      return sUDPEndPointManagerImpl;
+     * }
+     * Continue in connectedhomeip/src/transport/raw/UDP.cpp init method
+     */
     err = mTransports.Init(UdpListenParameters(DeviceLayer::UDPEndPointManager())
                                .SetAddressType(IPAddressType::kIPv6)
                                .SetListenPort(mOperationalServicePort)
@@ -213,23 +231,33 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
 #endif
     SuccessOrExit(err);
 
+    /* Initililze Server's session manager */
     err = mSessions.Init(&DeviceLayer::SystemLayer(), &mTransports, &mMessageCounterManager, mDeviceStorage, &GetFabricTable(),
                          *mSessionKeystore);
     SuccessOrExit(err);
 
+    /* Register delegation to mFabridDelegate so that mFabridDelegate can use sServer's member functions */
     err = mFabricDelegate.Init(this);
     SuccessOrExit(err);
+    /* Prepend server's mFabricDelegate member to its mFabrics member's intrusive linked-list */
     mFabrics.AddFabricDelegate(&mFabricDelegate);
 
+    /* Establish relationship between mExchangeMgr and session manager (mSessions), then register mSessions's
+     * callback when messages are received to mExchangeMgr.OnMessageReceived(...) method*/
     err = mExchangeMgr.Init(&mSessions);
     SuccessOrExit(err);
+    /* Establish relation ship between mMessageCounterManager and mExchangeMgr, then register Unsolicited Message Handler
+     * for Message Counter Synchronization Protocol Message Types to mMessageCounterManager*/ 
     err = mMessageCounterManager.Init(&mExchangeMgr);
     SuccessOrExit(err);
 
+    /* register Unsolicited Message Handler for Status Report Message Types to mMessageCounterManager*/ 
     err = mUnsolicitedStatusHandler.Init(&mExchangeMgr);
     SuccessOrExit(err);
 
+    /* Establish relation ship between mCommissioningWindowManager and this instance, the server */
     SuccessOrExit(err = mCommissioningWindowManager.Init(this));
+    /* Delegate initParams.appDelegate to mCommissioningWindowManager to handle commisionning events by appDelegate */
     mCommissioningWindowManager.SetAppDelegate(initParams.appDelegate);
 
     app::DnssdServer::Instance().SetFabricTable(&mFabrics);
@@ -270,6 +298,7 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     // a valid port at bind time), that will result in two possible ports being provided back from the resultant endpoint
     // initializations. Since IPv6 is POR for Matter, let's go ahead and pick that port.
     //
+    /* GetImplAtIndex<0> is UDPEndpointManger for IPv6 */
     app::DnssdServer::Instance().SetSecuredPort(mTransports.GetTransport().GetImplAtIndex<0>().GetBoundPort());
 
     app::DnssdServer::Instance().SetUnsecuredPort(mUserDirectedCommissioningPort);
@@ -292,6 +321,7 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     }
     else
     {
+/* Start commisioning automatically if config-ed so */
 #if CHIP_DEVICE_CONFIG_ENABLE_PAIRING_AUTOSTART
         SuccessOrExit(err = mCommissioningWindowManager.OpenBasicCommissioningWindow());
 #endif
@@ -302,9 +332,11 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
 #if !CHIP_DEVICE_LAYER_TARGET_ESP32 && !CHIP_DEVICE_LAYER_TARGET_MBED &&                                                           \
     (!CHIP_DEVICE_LAYER_TARGET_AMEBA || !CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE)
     // StartServer only enables commissioning mode if device has not been commissioned
+    /* INVESTIGATE: Will firmware waits until commision finishes? */
     app::DnssdServer::Instance().StartServer();
 #endif
 
+    /* Matter security model */
     caseSessionManagerConfig = {
         .sessionInitParams =  {
             .sessionManager    = &mSessions,
@@ -328,6 +360,7 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
                                                     &mCertificateValidityPolicy, mGroupsProvider);
     SuccessOrExit(err);
 
+    /* CASE session established by now */
     err = chip::app::InteractionModelEngine::GetInstance()->Init(&mExchangeMgr, &GetFabricTable(), mReportScheduler,
                                                                  &mCASESessionManager, mSubscriptionResumptionStorage);
     SuccessOrExit(err);

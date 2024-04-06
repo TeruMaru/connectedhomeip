@@ -34,7 +34,7 @@
 
 // Include system and language headers
 #include <errno.h>
-#include <fcntl.h>
+#include <fcntl.h> /* File controller headers */
 #include <unistd.h>
 
 #if !CHIP_SYSTEM_CONFIG_USE_POSIX_PIPE
@@ -53,8 +53,8 @@ namespace System {
 namespace {
 inline int SetNonBlockingMode(int fd)
 {
-    int flags = ::fcntl(fd, F_GETFL, 0);
-    return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    int flags = ::fcntl(fd, F_GETFL, 0); /* Get file status flags and file access modes */
+    return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK); /* Append nonblocking mode to the returned flags above */
 }
 } // anonymous namespace
 

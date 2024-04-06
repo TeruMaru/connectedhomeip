@@ -183,6 +183,7 @@ void GenericPlatformManagerImpl_Zephyr<ImplClass>::_RunEventLoop(void)
     SystemLayerSocketsLoop().EventLoopBegins();
     while (mShouldRunEventLoop)
     {
+        /* See APIs implementations in  src/system/SystemLayerImplSelect.cpp */
         SystemLayerSocketsLoop().PrepareEvents();
 
         Impl()->UnlockChipStack();

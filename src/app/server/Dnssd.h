@@ -15,6 +15,8 @@
  *    limitations under the License.
  */
 
+/* DNS Service Discovery Server */
+
 #pragma once
 
 #include <app/icd/server/ICDServerConfig.h>

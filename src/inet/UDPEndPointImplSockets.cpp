@@ -587,7 +587,7 @@ void UDPEndPointImplSockets::HandlePendingIO(System::SocketEvents events)
 
     if (!lBuffer.IsNull())
     {
-        struct iovec msgIOV;
+        struct iovec msgIOV; /* IO vector */
         SockAddr lPeerSockAddr;
         uint8_t controlData[256];
         struct msghdr msgHeader;
@@ -595,7 +595,7 @@ void UDPEndPointImplSockets::HandlePendingIO(System::SocketEvents events)
         msgIOV.iov_base = lBuffer->Start();
         msgIOV.iov_len  = lBuffer->AvailableDataLength();
 
-        memset(&lPeerSockAddr, 0, sizeof(lPeerSockAddr));
+        memset(&lPeerSockAddr, 0, sizeof(lPeerSockAddr)); /* Set all 0s */
 
         memset(&msgHeader, 0, sizeof(msgHeader));
 

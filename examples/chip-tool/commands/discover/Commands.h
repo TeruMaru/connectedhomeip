@@ -74,15 +74,19 @@ void registerCommandsDiscover(Commands & commands, CredentialIssuerCommands * cr
 
     commands_list clusterCommands = {
         make_unique<Resolve>(credsIssuerConfig),
+        /* Get a device scanner and start browsing DNS-SD services based on used transport protocols, i.e. UDP (IPv6 or thread) or BLE*/
         make_unique<DiscoverCommissionablesStartCommand>(credsIssuerConfig),
+        /* Stop the started device scanner from browsing DNS-SD services based on used transport protocols, i.e. UDP (IPv6 or thread) or BLE*/
         make_unique<DiscoverCommissionablesStopCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionablesListCommand>(credsIssuerConfig),
+        /* Get current commissioner and us it to resolve or browse then resolve DNS-SD service/*
         make_unique<DiscoverCommissionablesCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionableByShortDiscriminatorCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionableByLongDiscriminatorCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionableByCommissioningModeCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionableByVendorIdCommand>(credsIssuerConfig),
         make_unique<DiscoverCommissionableByDeviceTypeCommand>(credsIssuerConfig),
+        /* End of discovering commissionable device commands group*/
         make_unique<DiscoverCommissionersCommand>(credsIssuerConfig),
     };
 

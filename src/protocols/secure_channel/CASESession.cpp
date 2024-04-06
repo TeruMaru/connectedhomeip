@@ -438,6 +438,7 @@ CHIP_ERROR CASESession::Init(SessionManager & sessionManager, Credentials::Certi
                              SessionEstablishmentDelegate * delegate, const ScopedNodeId & sessionEvictionHint)
 {
     MATTER_TRACE_SCOPE("Init", "CASESession");
+    /* delegate is the pointer to CASEServer*/
     VerifyOrReturnError(delegate != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(mGroupDataProvider != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(sessionManager.GetSessionKeystore() != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
@@ -449,6 +450,17 @@ CHIP_ERROR CASESession::Init(SessionManager & sessionManager, Credentials::Certi
     mDelegate = delegate;
     ReturnErrorOnFailure(AllocateSecureSession(sessionManager, sessionEvictionHint));
 
+    /* In src/credentials/CHIPCert.cpp:
+     *      void ValidationContext::Reset()
+     *      {
+     *          mEffectiveTime  = EffectiveTime{};
+     *          mTrustAnchor    = nullptr;
+     *          mValidityPolicy = nullptr;
+     *          mRequiredKeyUsages.ClearAll();
+     *          mRequiredKeyPurposes.ClearAll();
+     *          mRequiredCertType = CertType::kNotSpecified;
+     *      }
+     */
     mValidContext.Reset();
     mValidContext.mRequiredKeyUsages.Set(KeyUsageFlags::kDigitalSignature);
     mValidContext.mRequiredKeyPurposes.Set(KeyPurposeFlags::kServerAuth);

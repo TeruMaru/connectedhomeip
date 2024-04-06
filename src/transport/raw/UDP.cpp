@@ -47,6 +47,9 @@ CHIP_ERROR UDP::Init(UdpListenParameters & params)
         Close();
     }
 
+    /*
+     * Calls chip::Inet::EndPointManagerImplPool<UDPEndPointImplOT>'s NewEndPoint method, result stored in mUDPEndpoint
+     */
     err = params.GetEndPointManager()->NewEndPoint(&mUDPEndPoint);
     SuccessOrExit(err);
 
@@ -54,9 +57,11 @@ CHIP_ERROR UDP::Init(UdpListenParameters & params)
 
     ChipLogDetail(Inet, "UDP::Init bind&listen port=%d", params.GetListenPort());
 
+    /* Implementation in src/inet/UDPEndPointImplSockets.cpp */
     err = mUDPEndPoint->Bind(params.GetAddressType(), Inet::IPAddress::Any, params.GetListenPort(), params.GetInterfaceId());
     SuccessOrExit(err);
 
+    /* Listen to UDP port (which is in fact an I/0 file descriptor) and register callbacks when UDP packets are received*/
     err = mUDPEndPoint->Listen(OnUdpReceive, OnUdpError, this);
     SuccessOrExit(err);
 
@@ -125,7 +130,12 @@ void UDP::OnUdpReceive(Inet::UDPEndPoint * endPoint, System::PacketBufferHandle 
 
     CHIP_FAULT_INJECT(FaultInjection::kFault_DropIncomingUDPMsg, buffer = nullptr; return;);
 
-    udp->HandleMessageReceived(peerAddress, std::move(buffer));
+    /* HandleMessageReceived is from raw/Base.h, which will call its delegated method from TrasnportMgrBase.cpp.
+     * TrasnportMgrBase class inturn calls its SessionManager Delegate's OnMessageReceived method. TrasnportMgrBase's
+     * SessionManager Delegate is registered to be Server's mExchangeMgr in Server's class initialization (see 
+     * mExchangeMgr.Init line). Eventually, mExchangeMgr.OnMessageReceived(...) is called.
+     */
+    udp->HandleMessageReceived(peerAddress, std::move(buffer)); 
 
     if (err != CHIP_NO_ERROR)
     {

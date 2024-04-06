@@ -6,19 +6,19 @@ The CHIP `src` directory is structured as follows:
 
 | File / Folder | Contents                                           |
 | ------------- | -------------------------------------------------- |
-| app           | Application Layer -- Zigbee Cluster Library (ZCL)  |
+| app           | Application Layer -- Zigbee Cluster Library (ZCL)  | -> Read server dir
 | ble           | BLE Layer -- Bluetooth Transport Protocol (BTP)    |
 | controller    | Controller API                                     |
 | crypto        | Cryptography libraries                             |
 | darwin        | Darwin Framework (iOS and macOS)                   |
 | include       | Public headers                                     |
 | inet          | Network Layer -- TCP and UDP endpoints             |
-| lib           | Core and Support libraries                         |
+| lib           | Core and Support libraries                         | -> Read dnssd dir
 | lwip          | Lightweight IP adaptation (to third_party library) |
-| platform      | Device Layer -- platform portability adaptations   |
+| platform      | Device Layer -- platform portability adaptations   | -> Focus on NRF Connect and Zephyr
 | qrcodetool    | QR code tool                                       |
 | setup_payload | QR code setup data encode / decode library         |
-| system        | System Layer -- common APIs for mem, work, etc.    |
+| system        | System Layer -- common APIs for mem, work, etc.    | -> Need to read to understand socket layer (socketwatch and reaction)
 | test_driver   | Framework for on-device testing                    |
 
 #### Darwin
