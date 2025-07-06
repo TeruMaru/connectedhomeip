@@ -285,6 +285,11 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
 #endif // CHIP_CONFIG_ENABLE_SERVER_IM_EVENT
 
     // This initializes clusters, so should come after lower level initialization.
+    /* Phhuynh:
+     * Perform the following steps:
+     *   1. Configure Ember Application Framework (emberAfEndpointConfigure())
+     *   2. Initialize Ember Application Framework (connectedhomeip/src/app/util/util.cpp::emberAfInit())
+    */
     InitDataModelHandler();
 
 #if defined(CHIP_APP_USE_ECHO)
@@ -323,6 +328,12 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     {
 /* Start commisioning automatically if config-ed so */
 #if CHIP_DEVICE_CONFIG_ENABLE_PAIRING_AUTOSTART
+        /*Phhuynh:
+            Matter commissioning flow starts here, where OpenBasicCommissioningWindow() will
+        call AdvertiseAndListenForPASE()
+            Spec: https://docs.nordicsemi.com/bundle/ncs-2.5.2/page/nrf/protocols/matter/overview/commissioning.html
+            Code: connectedhomeip/src/app/server/CommissioningWindowManager.cpp
+        */
         SuccessOrExit(err = mCommissioningWindowManager.OpenBasicCommissioningWindow());
 #endif
     }
