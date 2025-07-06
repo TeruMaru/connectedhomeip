@@ -53,6 +53,9 @@ class EndPointManager
 {
 public:
     using EndPoint        = EndPointType;
+    /*Phhuynh:
+        Declares function pointer type called EndpointVisitor
+    */
     using EndPointVisitor = Loop (*)(EndPoint *);
 
     EndPointManager() {}
@@ -112,6 +115,9 @@ template <typename EndPointImpl>
 class EndPointManagerImplPool : public EndPointManager<typename EndPointImpl::EndPoint>
 {
 public:
+    /* Phhuynh:
+     * For example, if EndpointImpl is UDPEndPointImplOpenThread, then EndpointImpl::Endpoint is UDPEndPoint
+    */
     using Manager  = EndPointManager<typename EndPointImpl::EndPoint>;
     using EndPoint = typename EndPointImpl::EndPoint;
 
@@ -122,6 +128,13 @@ public:
     void ReleaseEndPoint(EndPoint * endPoint) override { sEndPointPool.ReleaseObject(static_cast<EndPointImpl *>(endPoint)); }
     Loop ForEachEndPoint(const typename Manager::EndPointVisitor visitor) override
     {
+        /*Phhuynh:
+        Analyzing lambda expression [&](EndPoint * endPoint) -> Loop { return visitor(endPoint); }):
+        + Capture clause == & : Variables from surrounding scope is captured by reference
+        + Parameter list == EndPoint * endPoint : Lamba body will use pointer to Endpoint as its parameter
+        + Return type == Loop: Lamda expression will return data of class chip::Loop
+        + Lambda body: Call the passed in visitor function
+        */
         return sEndPointPool.ForEachActiveObject([&](EndPoint * endPoint) -> Loop { return visitor(endPoint); });
     }
 

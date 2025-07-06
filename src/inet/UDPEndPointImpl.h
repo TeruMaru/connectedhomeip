@@ -34,6 +34,13 @@
 namespace chip {
 namespace Inet {
 
+/* Phhuynh:
+ * UDPEndPointImpl class will be resolved by build config INET_UDP_END_POINT_IMPL_CONFIG_FILE. The implementations are
+ * 1. LWIP
+ * 2. NetworkFramework
+ * 3. OpenThread
+ * 4. Sockets
+*/
 using UDPEndPointManagerImpl = EndPointManagerImplPool<UDPEndPointImpl>;
 
 } // namespace Inet

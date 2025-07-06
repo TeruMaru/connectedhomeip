@@ -580,6 +580,10 @@ void BLEManagerImpl::HandleBLEAdvertisementIntervalChange(System::Layer * layer,
     ChipLogProgress(DeviceLayer, "CHIPoBLE advertising mode changed to slow");
 }
 
+/* Phhuynh:
+ * This will be called in PlatformManager's DispatchEventToDeviceLayer().
+ * See: connectedhomeip/src/include/platform/internal/GenericPlatformManagerImpl.ipp
+*/
 void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
