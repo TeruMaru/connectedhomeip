@@ -137,6 +137,11 @@ CHIP_ERROR CHIPCommand::MaybeSetUpStack()
         port = static_cast<uint16_t>(port + CurrentCommissionerId());
     }
     factoryInitParams.listenPort = port;
+    /* Phhuynh:
+        Creates PlatformManager object and calls its InitChipStack() method. By the time
+        InitChipStack() returns, SystemLayer and UDPEndpointManager objects are ensured
+        to have been created.
+    */
     ReturnLogErrorOnFailure(DeviceControllerFactory::GetInstance().Init(factoryInitParams));
 
     auto systemState = chip::Controller::DeviceControllerFactory::GetInstance().GetSystemState();
