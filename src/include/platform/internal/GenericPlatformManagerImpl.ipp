@@ -66,6 +66,14 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     SuccessOrExit(err);
 
     // Initialize the CHIP system layer.
+    /*
+     * Calling chip::System::LayerImplSelect::Init() that will initialize a LayerImplSelect object
+     * having a list of SocketWatch structures. If build config is not using LIBEV (CHIP_SYSTEM_CONFIG_USE_LIBEV == FALSE),
+     * then create a WakeEvent object and assign a SocketWatch struct to watch this event. The assigned SocketWatch structure
+     * is also had it's callback member registered to WakeEvent's Confirm() method. Whenever PlatformManager wants to wake the
+     * POSIX's select() function, it will call its Signal() method, which will ultimately call WakeEvent's Notify() method.
+     * See select(): https://man7.org/linux/man-pages/man2/select.2.html
+    */
     err = SystemLayer().Init();
     if (err != CHIP_NO_ERROR)
     {
@@ -74,6 +82,23 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     SuccessOrExit(err);
 
     // Initialize the Configuration Manager.
+    /*Phhuynh:
+        For Posix OSes, creates 
+        1. /tmp/chip_factory.ini whose init content is similar to
+            [DEFAULT]
+            vendor-id=CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID
+            product-id=CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID
+        2. /tmp/chip_config.ini whose init content is similar to
+            [DEFAULT]
+            unique-id=0xdeadbeaf
+            regulatory-location=0x0
+            location-capability=0x2
+        3. /tmp/chip_counters.ini whose init content is similar to
+            [DEFAULT]
+            reboot-count=1
+            total-operational-hours=0x0
+            boot-reason=0x0
+    */
     err = ConfigurationMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
@@ -82,6 +107,27 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     SuccessOrExit(err);
 
     // Initialize the CHIP UDP layer.
+    /* Phhuynh: Ref in connectedhomeip/src/inet/InetLayer.h
+     *   Initialize a UDP endpoint manager that manages UDPEndpointPool.
+     *   Manage = Create, Delete, and Iterate through pool of registered UDPEndpoints
+     *   UPDEndPointManager() resolves to:
+     *      + From connectedhomeip/src/include/platform/CHIPDeviceLayer.h: &ConnectivityMgr().UDPEndPointManager();
+     *      + From connectedhomeip/src/include/platform/ConnectivityManager.h: 
+     *          - static_cast<ImplClass *>(this)->_UDPEndPointManager();
+     *          | - static_cast<ConnectivityManagerImpl *>(this)->_UDPEndPointManager();
+     *        => This cast is a form of CRTP allowing ConnectivityManager class to access methods from ConnectivityManagerImpl class, which is not only derived from ConnectivityManager but also from
+     *         ** Internal::GenericConnectivityManagerImpl
+     *         ** Internal::GenericConnectivityManagerImpl_UDP
+     *         ** Internal::GenericConnectivityManagerImpl_TCP if application uses TCP
+     *         ** Internal::GenericConnectivityManagerImpl_BLE if application uses BLE
+     *         ** GenericConnectivityManagerImpl_Thread if application uses Thread
+     *      + From connectedhomeip/src/include/platform/internal/GenericConnectivityManagerImpl_UDP.ipp: static chip::Inet::UDPEndPointManagerImpl sUDPEndPointManagerImpl;
+     *      + From connectedhomeip/src/inet/UDPEndPointImpl.h: using UDPEndPointManagerImpl = EndPointManagerImplPool<UDPEndPointImpl>;
+     *          - For example, on Controller application deployed on Raspberry, UDPEndPointImpl is highly possibly UDPEndPointImplSockets,
+     *            where /home/phhuynh/Work/Matter/connectedhomeip/src/inet/UDPEndPointImplSockets.h defines "using UDPEndPointImpl = UDPEndPointImplSockets;"
+     *          => All in all, with this example, using UDPEndPointManagerImpl = EndPointManagerImplPool<UDPEndPointImpl> will be resolved to EndPointManagerImplPool<UDPEndPointImplSockets>
+     *      + From connectedhomeip/src/inet/InetLayer.h: Definition of EndPointManagerImplPool and EndPointManager
+    */
     err = UDPEndPointManager()->Init(SystemLayer());
     if (err != CHIP_NO_ERROR)
     {
@@ -93,6 +139,12 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
 
     // Initialize the CHIP BLE manager.
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
+    /* Phhuynh:
+     * Clear all BLEManagerFlags and set Flags::kAdvertisingEnabled if CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART is set.
+     * Register callbacks for when BLE connection is established and dropped.
+     * Initialize BLELayer
+     * Schedule a job to DriveBLEState
+    */
     err = BLEMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
@@ -102,6 +154,9 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
 #endif
 
     // Initialize the Connectivity Manager object.
+    /* Phhuynh: Ref in connectedhomeip/src/platform/Zephyr/ConnectivityManagerImpl.h and connectedhomeip/src/platform/Zephyr/ConnectivityManagerImpl.cpp
+     *  Initialize Thread Manager if the application uses Thread
+     */
     err = ConnectivityMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
@@ -318,6 +373,9 @@ void GenericPlatformManagerImpl<ImplClass>::DispatchEventToDeviceLayer(const Chi
 {
     // Dispatch the event to all the components in the Device Layer.
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
+    /* Phhuynh:
+     * See connectedhomeip/src/platform/Zephyr/BLEManagerImpl.cpp
+    */
     BLEMgr().OnPlatformEvent(event);
 #endif
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD

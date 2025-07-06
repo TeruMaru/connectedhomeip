@@ -79,6 +79,12 @@ CHIP_ERROR GenericPlatformManagerImpl_Zephyr<ImplClass>::_InitChipStack(void)
 #endif
 
     // Call up to the base class _InitChipStack() to perform the bulk of the initialization.
+    /*
+     * phhuynh:
+     *      GenericPlatformManagerImpl<ImplClass>::_InitChipStack() will also initialize DeviceLayer::SystemLayer().
+     *      DeviceLayer::SystemLayer class will maintain a lists of timers and a timer pool that will handle events
+     *      when associated timer expires
+    */ 
     err = GenericPlatformManagerImpl<ImplClass>::_InitChipStack();
     SuccessOrExit(err);
 
@@ -192,6 +198,7 @@ void GenericPlatformManagerImpl_Zephyr<ImplClass>::_RunEventLoop(void)
 
         SystemLayerSocketsLoop().HandleEvents();
 
+        // Phhuynh: Handle events from message queue
         ProcessDeviceEvents();
     }
     SystemLayerSocketsLoop().EventLoopEnds();
