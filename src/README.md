@@ -7,8 +7,8 @@ The CHIP `src` directory is structured as follows:
 | File / Folder | Contents                                           |
 | ------------- | -------------------------------------------------- |
 | app           | Application Layer -- Zigbee Cluster Library (ZCL)  | -> Read server dir
-| ble           | BLE Layer -- Bluetooth Transport Protocol (BTP)    |
-| controller    | Controller API                                     |
+| ble           | BLE Layer -- Bluetooth Transport Protocol (BTP)    | -> Just bluetooth lower level API, can skip
+| controller    | Controller API                                     | -> See EstablishPASEConnection() to see how devices are connected via BLE (Focus on code blocks denoted by CONFIG_NETWORK_LAYER_BLE)
 | crypto        | Cryptography libraries                             |
 | darwin        | Darwin Framework (iOS and macOS)                   |
 | include       | Public headers                                     |
@@ -18,7 +18,11 @@ The CHIP `src` directory is structured as follows:
 | platform      | Device Layer -- platform portability adaptations   | -> Focus on NRF Connect and Zephyr
 | qrcodetool    | QR code tool                                       |
 | setup_payload | QR code setup data encode / decode library         |
-| system        | System Layer -- common APIs for mem, work, etc.    | -> Need to read to understand socket layer (socketwatch and reaction)
+| ------------  | -------------------------------------------------- | -> Creates a pool of Timers that invoke registered callback funcitons 
+|               |                                                    | when they expire, but not immediately. The system layer keeps a list
+| system        | System Layer -- common APIs for mem, work, etc.    | at expired timers, and invoke mentioned callbacks inside the PlatformManager's
+|               |                                                    | event handling loop (specifically RunEventLoop). This event handling loop also
+| ------------  | -------------------------------------------------- | handles Socket events and messages in Zephyr's Message Queue (for Zephyr implemented PlatformManager).
 | test_driver   | Framework for on-device testing                    |
 
 #### Darwin
