@@ -54,6 +54,10 @@ CHIP_ERROR ConfigurationManagerImpl::Init()
     uint32_t rebootCount;
 
     // Force initialization of NVS namespaces if they doesn't already exist.
+    /* Phhuynh:
+        The follwing calls create desginated config files (.INI) if they don't
+        exist and verify creations by parsing empty .INI files.
+    */ 
     err = PosixConfig::EnsureNamespace(PosixConfig::kConfigNamespace_ChipFactory);
     SuccessOrExit(err);
     err = PosixConfig::EnsureNamespace(PosixConfig::kConfigNamespace_ChipConfig);
@@ -62,6 +66,9 @@ CHIP_ERROR ConfigurationManagerImpl::Init()
     SuccessOrExit(err);
 
     // Initialize the generic implementation base class.
+    /* Phhuynh:
+        Creates Unique ID for ChipConfig and writes to corresponding .ini file
+    */
     err = Internal::GenericConfigurationManagerImpl<PosixConfig>::Init();
     SuccessOrExit(err);
 
