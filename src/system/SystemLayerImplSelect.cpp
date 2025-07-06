@@ -408,6 +408,11 @@ CHIP_ERROR LayerImplSelect::RequestCallbackOnPendingRead(SocketWatchToken token)
 
     watch->mPendingIO.Set(SocketEventFlags::kRead);
 
+/*
+ * Phhuynh:
+ * CHIP_SYSTEM_CONFIG_USE_DISPATCH is for MAC and IOS targets
+ * CHIP_SYSTEM_CONFIG_USE_LIBEV is not used by zephyr
+ */
 #if CHIP_SYSTEM_CONFIG_USE_DISPATCH
     if (watch->mRdSource == nullptr)
     {
