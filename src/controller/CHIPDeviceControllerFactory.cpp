@@ -152,6 +152,11 @@ CHIP_ERROR DeviceControllerFactory::InitSystemState(FactoryInitParams params)
     //
     // The logic below expects IPv6 to be at index 0 of this tuple. Please do not alter that.
     //
+    /* Phhuynh:
+        For each TransportTypeParameters initialized below, a transport object for that TransportTypeParameter
+        will be created and added to corresponding ConnectivityManager pool. Moreover, the transport object
+        will be bound to passedin params.listenPort, then register callbacks for message received and errors
+    */
     ReturnErrorOnFailure(stateParams.transportMgr->Init(Transport::UdpListenParameters(stateParams.udpEndPointManager)
                                                             .SetAddressType(Inet::IPAddressType::kIPv6)
                                                             .SetListenPort(params.listenPort)
@@ -179,6 +184,7 @@ CHIP_ERROR DeviceControllerFactory::InitSystemState(FactoryInitParams params)
     stateParams.sessionKeystore           = params.sessionKeystore;
     stateParams.bdxTransferServer         = chip::Platform::New<bdx::BDXTransferServer>();
 
+    
     // if no fabricTable was provided, create one and track it in stateParams for cleanup
     stateParams.fabricTable = params.fabricTable;
 
@@ -216,8 +222,10 @@ CHIP_ERROR DeviceControllerFactory::InitSystemState(FactoryInitParams params)
 
     auto delegate = chip::Platform::MakeUnique<ControllerFabricDelegate>();
     ReturnErrorOnFailure(delegate->Init(sessionResumptionStorage, stateParams.groupDataProvider));
+    /* Phhuynh: Calling std::unique_ptr.get()*/
     stateParams.fabricTableDelegate = delegate.get();
     ReturnErrorOnFailure(stateParams.fabricTable->AddFabricDelegate(stateParams.fabricTableDelegate));
+    /* Phhuynh: Calling std::unique_ptr.release()*/
     delegate.release();
 
     ReturnErrorOnFailure(stateParams.sessionMgr->Init(stateParams.systemLayer, stateParams.transportMgr,
@@ -237,6 +245,7 @@ CHIP_ERROR DeviceControllerFactory::InitSystemState(FactoryInitParams params)
         stateParams.caseServer = chip::Platform::New<CASEServer>();
 
         // Enable listening for session establishment messages.
+        /*Phhuynh: Continue to read here*/
         ReturnErrorOnFailure(stateParams.caseServer->ListenForSessionEstablishment(
             stateParams.exchangeMgr, stateParams.sessionMgr, stateParams.fabricTable, sessionResumptionStorage,
             stateParams.certificateValidityPolicy, stateParams.groupDataProvider));

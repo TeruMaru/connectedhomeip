@@ -565,6 +565,11 @@ CHIP_ERROR TLVReader::EnterContainer(TLVType & outerContainerType)
     if (!TLVTypeIsContainer(elemType))
         return CHIP_ERROR_INCORRECT_STATE;
 
+    /* Phhuynh: 
+        Save the type of the container to be entered before entering it
+        so that when ExitContainer() is called, the reader can restore
+        the container type it originally entered.
+    */
     outerContainerType = mContainerType;
     mContainerType     = static_cast<TLVType>(elemType);
 

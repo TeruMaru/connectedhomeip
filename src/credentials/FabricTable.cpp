@@ -1067,6 +1067,9 @@ CHIP_ERROR FabricTable::Init(const FabricTable::InitParams & initParams)
     static_assert(kMaxValidFabricIndex <= UINT8_MAX, "Cannot create more fabrics than UINT8_MAX");
 
     mFabricCount = 0;
+    /*Phhuynh
+        Colon (:) after auto is C++'s loop in range syntax.
+    */
     for (auto & fabric : mStates)
     {
         fabric.Reset();
@@ -1081,6 +1084,9 @@ CHIP_ERROR FabricTable::Init(const FabricTable::InitParams & initParams)
 
     uint8_t buf[IndexInfoTLVMaxSize()];
     uint16_t size  = sizeof(buf);
+    /* Phhuynh:
+        Get FabricIndexInfo in storage (/tmp/chip_config.ini) and store in buf
+    */
     CHIP_ERROR err = mStorage->SyncGetKeyValue(DefaultStorageKeyAllocator::FabricIndexInfo().KeyName(), buf, size);
     if (err == CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND)
     {

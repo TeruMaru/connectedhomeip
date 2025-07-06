@@ -138,11 +138,19 @@ CHIP_ERROR ExchangeManager::RegisterUMH(Protocols::Id protocolId, int16_t msgTyp
 
     for (auto & umh : UMHandlerPool)
     {
+        /* Phhuynh: if (!(umh.Handler != nullptr)) <=> if (umh.Handler == nullptr)
+            If the slot is not in use, i.e. not registered to handle protocolId and msgType in argument list
+        */
         if (!umh.IsInUse())
         {
+            /* Phhuynh: Compare against nullptr to ensure assigment happens only once*/
             if (selected == nullptr)
                 selected = &umh;
         }
+        /* Phhuynh:
+            If the handler slot is already in use, i.e. there is already a handler for this protocolId and msgType,
+            override the slot with the new handler passed in the argument list
+        */
         else if (umh.Matches(protocolId, msgType))
         {
             umh.Handler = handler;
@@ -151,6 +159,10 @@ CHIP_ERROR ExchangeManager::RegisterUMH(Protocols::Id protocolId, int16_t msgTyp
     }
 
     if (selected == nullptr)
+        /* Phhuynh:
+            This happens when all handler slots are in use and they handle different set of priorityId and msgType
+            as compared to the ones passed in
+        */
         return CHIP_ERROR_TOO_MANY_UNSOLICITED_MESSAGE_HANDLERS;
 
     selected->Handler     = handler;

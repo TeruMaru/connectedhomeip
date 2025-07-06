@@ -192,6 +192,25 @@ inline bool TLVTypeIsByteString(TLVElementType type)
 }
 
 // TODO: move to private namespace
+/* Phhuynh:
+    Get the size of length/value portion in TLV based on its type
+    +--------------------+-------------------+------------------------+---------------------|
+    |      TLV Type      | TLV Type encoding | LV field size encoding |   LV field size     |
+    +--------------------+-------------------+------------------------+---------------------|
+    |NotSpecified        | -1                |                        | kTLVFieldSize_0Byte |
+    |UnknownContainer    | -2                |                        | kTLVFieldSize_0Byte |
+    |SignedInteger       | 0x00              | 0x00 & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |UnsignedInteger     | 0x04              | 0x04 & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |Boolean             | 0x08              | 0x08 & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |FloatingPointNumber | 0x0A              | 0x0A & 0x3 = 0x2       | kTLVFieldSize_4Byte |
+    |UTF8String          | 0x0C              | 0x0C & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |ByteString          | 0x10              | 0x10 & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |Null                | 0x14              | 0x14 & 0x3 = 0x0       | kTLVFieldSize_1Byte |
+    |Structure           | 0x15              | 0x15 & 0x3 = 0x1       | kTLVFieldSize_2Byte |
+    |Array               | 0x16              | 0x16 & 0x3 = 0x2       | kTLVFieldSize_4Byte |
+    |List                | 0x17              | 0x17 & 0x3 = 0x3       | kTLVFieldSize_8Byte |
+    +--------------------+-------------------+------------------------+---------------------|
+*/
 inline TLVFieldSize GetTLVFieldSize(TLVElementType type)
 {
     if (TLVTypeHasValue(type))
